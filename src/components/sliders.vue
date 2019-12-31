@@ -3,7 +3,7 @@
     position: absolute;
     z-index: 99;
     width: 230px;
-    height: 170px;
+    height: 200px;
     opacity: 0.8;
     left: 0px;
     top:50px;
@@ -37,6 +37,14 @@
       :format-tooltip="opacityFormatTooltip"
       @change="onOpacityChange"
       ></el-slider>
+      <el-slider
+        v-model="noDataValue"
+        show-stops
+        range
+        :min="-100"
+        :format-tooltip="noDataValueFormatTooltip"
+        @change="onNoDataValueChange"
+      ></el-slider>
       <el-select
         @change="onSelectChange"
         v-model="defaultSelectValue">
@@ -60,6 +68,7 @@
         value: 2016,
         thresholdValue: [0,100],
         opacityValue:100,
+        noDataValue:[0.01,100],
         options:[
           {
             label:"选项1",
@@ -185,10 +194,16 @@
       onOpacityChange:function(val){
         this.$emit("onopacitychange",val/100)
       },
+      onNoDataValueChange:function(val){
+        this.$emit("onnodatavaluechange",val/100)
+      },
       onSelectChange:function(val){
         this.$emit("onselectchange",val)
       },
       thresholdFormatTooltip:function (val) {
+        return val/100
+      },
+      noDataValueFormatTooltip:function(val){
         return val/100
       },
       opacityFormatTooltip:function (val) {

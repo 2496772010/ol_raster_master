@@ -1,12 +1,12 @@
 <template>
   <div id="app">
-    <el-container id="mainContainer">
+    <el-container id="mainContainer" >
       <el-header id="header"><h1>Remote Sensing 遥感云服务平台</h1></el-header>
       <el-container>
-        <el-aside width="initial" style="border: black 1px solid;height: 597px">
+        <el-aside width="initial" style="position:relative;border: black 1px solid;height:597px">
           <el-button @click="CollapseControl" icon="el-icon-s-fold"></el-button>
           <el-menu style="position: relative; " default-active="1-4-1" class="el-menu-vertical-demo" @open="handleOpen"
-                   @close="handleClose" :collapse="isCollapse">
+                   @close="handleClose" :collapse="isCollapse" @select="handleSelect">
             <el-submenu index="1">
               <template slot="title">
                 <i class="el-icon-menu"></i>
@@ -32,7 +32,7 @@
               </template>
               <el-menu-item index="2-1">多源时序分析</el-menu-item>
               <el-menu-item index="2-2">间隔年份分析</el-menu-item>
-              <el-menu-item index="2-3" @click="menuGlobeAnalysisClick">全局分析</el-menu-item>
+              <el-menu-item index="2-3" >全局分析</el-menu-item>
               <el-menu-item index="2-4">区域分析</el-menu-item>
             </el-submenu>
             <el-submenu index="3">
@@ -55,12 +55,11 @@
             </el-submenu>
           </el-menu>
         </el-aside>
-        <el-main style="padding: 0;margin: 0">
+        <el-main style="padding: 0;margin: 0;">
           <canvas id="canvas" style="display: none"></canvas>
           <ol_map style="position: relative;height: 597px" :is-show-pane="true">
           </ol_map>
         </el-main>
-
         <el-aside ref="elRightAside" width="initial" style="border: black 1px solid;height: 597px;" >
           <el-collapse-transition>
             <golbal_analysis  v-show="elRightAsideShow"></golbal_analysis>
@@ -109,23 +108,23 @@
         }
       },
       handleOpen(key, keyPath) {
-        console.log ( key, keyPath );
+
       },
       handleClose(key, keyPath) {
-        console.log ( key, keyPath );
+      },
+      handleSelect(key){
+        if (key==="2-3"){
+          if(this.elRightAsideShow===true){
+            this.elRightAsideShow=false
+          }
+          else {
+            this.elRightAsideShow=true
+          }
+
+        }
       },
       leftAsideControl() {
         this.elRightAsideShow=false
-      },
-      menuGlobeAnalysisClick(){
-
-        if(this.elRightAsideShow===true){
-          this.elRightAsideShow=false
-        }
-        else {
-          this.elRightAsideShow=true
-        }
-
       }
 
 

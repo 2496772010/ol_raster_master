@@ -1500,14 +1500,20 @@ function () {
       this.matrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
     }
   }
-  /**
-   * Get the raw data from the currently selected dataset.
-   * @returns {TypedArray} the data of the currently selected dataset.
-   */
-
 
   _createClass(plot, [{
-    key: "getDatAndDrawChart",
+    key: "setWidthHeight",
+    value: function setWidthHeight(width, height) {
+      options.width = width;
+      options.height = height;
+    }
+    /**
+     * Get the raw data from the currently selected dataset.
+     * @returns {TypedArray} the data of the currently selected dataset.
+     */
+
+  }, {
+    key: "getData",
     value: function getData() {
       var dataset = this.currentDataset;
 
@@ -1908,9 +1914,14 @@ function () {
               if (!this.clampHigh) {
                 alpha = 0;
               }
-            }
+            } // if (data[i] === this.noDataValue) {
+            //   alpha = 0;
+            // }
 
-            if (data[_i] === this.noDataValue) {
+
+            if (data[_i] >= this.noDataValue[0] && data[_i] <= this.noDataValue[1]) {
+              alpha = 255;
+            } else {
               alpha = 0;
             }
 

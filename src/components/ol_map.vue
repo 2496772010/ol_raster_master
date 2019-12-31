@@ -8,8 +8,6 @@
         @onselectchange="receiveColorScale"
       ></slider>
       <tool_bar></tool_bar>
-      <el-collapse-transition>
-      </el-collapse-transition>
     </div>
   </div>
 </template>
@@ -64,7 +62,6 @@
       this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, this.colorScale )//初始化图层
     },
     methods: {
-      getTiffData:async function(){},
       addCanvasLayer: async function (yearValue, thresholdValue, opacity, colorScale) {
         let url = 'http://localhost:8081/geoserver/LingBeiNDVI/ows?' +
           'service=WCS&version=2.0.1&request=GetCoverage&CoverageId=LingBeiNDVI:' +
@@ -78,7 +75,7 @@
         const image = await tiff.getImage ();//绘制tif
         const data = await image.readRasters ();
         this.tiffData=data;
-
+        this.$root.vm.$emit("senddata",data)//触发事件，发送tiff像元数据
         let imageCanvasSource = new ImageCanvas ( {
           canvasFunction: (extent, resolution, pixelRatio, size, projection) => {
             let map = this.map;
@@ -96,6 +93,7 @@
             let screenPointRightBottom = map.getPixelFromCoordinate ( [maxx, miny] );//换算图片屏幕右下角
             let width = Math.abs ( screenPointRightBottom[0] - screenPointLeftTop[0] );//实时计算图片的宽高
             let height = Math.abs ( screenPointLeftTop[1] - screenPointRightBottom[1] );
+
             let tempCanvas = document.getElementById ( 'canvas' );//缓存图像的canvas
             tempCanvas.style.display = 'none';
             let tempCtx = tempCanvas.getContext ( '2d' );//画布对象
@@ -116,9 +114,9 @@
             canvas.width = size[0];
             canvas.height = size[1];
             let ctx = canvas.getContext ( '2d' );
-            let x = mapOrigin[0] + delta[0] + screenPointLeftTop[0];//位置
-            let y = mapOrigin[1] + delta[1] + screenPointLeftTop[1];
-            ctx.globalAlpha = opacity
+            let x = (mapOrigin[0] + delta[0] + screenPointLeftTop[0]);//左上角位置
+            let y = (mapOrigin[1] + delta[1] + screenPointLeftTop[1]);
+            ctx.globalAlpha = opacity;
             ctx.drawImage ( tempCanvas, 0, 0, plotImageData.width, plotImageData.height, x, y, width, height );
 
             return canvas
@@ -128,7 +126,7 @@
       },
       receive: function (data) {
         this.yearValue = data;
-        this.$root.vm.$emit("senddata",this.tiffData)//触发事件，发送tiff像元数据
+
       },
       receiveThreshold: function (data) {
         this.thresholdValue = data
@@ -147,6 +145,7 @@
 
         } else {
           this.addCanvasLayer ( nVal, this.thresholdValue, this.opacity, this.colorScale )
+          // this.$root.vm.$emit("senddata",this.tiffData)//触发事件，发送tiff像元数据
         }
       },
       thresholdValue: function (nVal, oVal) {
