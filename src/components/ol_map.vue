@@ -1,13 +1,26 @@
 <template>
   <div>
     <div id="map" ref="rootMap">
+      <div style="position: absolute;z-index: 99;width: 80%;height: 30px">
+        <el-button icon="el-icon-coordinate" plain></el-button>
+        <el-button icon="el-icon-time" plain></el-button>
+        <el-button icon="iconfont icon-Coordinate" plain></el-button>
+        <el-button icon="iconfont icon-Line-Tool" plain></el-button>
+        <el-button icon="iconfont icon-tool_polygon"
+                   plain
+                   @keydown.native="disActive"
+                   @click="clip"
+                   :disabled="isClipDisabled"
+        >裁剪
+        </el-button>
+      </div>
       <slider
         @onthresholdchange="receiveThreshold"
         @changevalue="receive"
         @onopacitychange="receiveOpacity"
         @onselectchange="receiveColorScale"
+        @onnodatavaluechange="receiveNoDataValue"
       ></slider>
-      <tool_bar></tool_bar>
     </div>
   </div>
 </template>
@@ -17,9 +30,10 @@
   import olmapConfig from '../configjs/olmapConfig.js'
   import Map from 'ol/Map'
   import View from 'ol/View'
-  import {Image as ImageLayer} from 'ol/layer'
-  import {ImageCanvas} from 'ol/source'
+  import {Image as ImageLayer, Vector as VectorLayer} from 'ol/layer'
+  import {ImageCanvas, Vector as VectorSource} from 'ol/source'
   import {defaults} from 'ol/control'
+  import Draw, {createBox} from 'ol/interaction/Draw'
   import slider from "@/components/sliders";
   import Tool_bar from "@/components/toolbar";
   import Echarts from "@/components/echarts";
@@ -34,11 +48,14 @@
         yearValue: 2016,
         thresholdValue: [0, 1],
         opacity: 1.00,
+        noDataValue: [0.001, 1],
         colorScale: "greys",
-        tiffData:null
+        tiffData: null,
+        draw: null,
+        screenbbox: null
       }
     },
-    props: ["isShowPane"],
+    props: ["isClipDisabled"],
     mounted() {
       const mapContainer = this.$refs.rootMap;
       this.map = new Map ( {
@@ -47,7 +64,7 @@
         layers: olmapConfig.layers (),
         view: new View ( {
           projection: "EPSG:4326",
-          center: [115.1, 25],
+          center: [115.05, 24.955],
           zoom: 12
         } )
       } );
@@ -59,10 +76,10 @@
         } )
       } );
       this.map.addLayer ( canvasLayer );
-      this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, this.colorScale )//初始化图层
+      this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue )//初始化图层
     },
     methods: {
-      addCanvasLayer: async function (yearValue, thresholdValue, opacity, colorScale) {
+      addCanvasLayer: async function (yearValue, thresholdValue, opacity, colorScale, noDataValue) {
         let url = 'http://localhost:8081/geoserver/LingBeiNDVI/ows?' +
           'service=WCS&version=2.0.1&request=GetCoverage&CoverageId=LingBeiNDVI:' +
           yearValue +
@@ -74,8 +91,8 @@
         const tiff = await GeoTIFF.fromArrayBuffer ( arrayBuffer );
         const image = await tiff.getImage ();//绘制tif
         const data = await image.readRasters ();
-        this.tiffData=data;
-        this.$root.vm.$emit("senddata",data)//触发事件，发送tiff像元数据
+        this.tiffData = data;
+        this.$root.vm.$emit ( "senddata", data, yearValue );//触发事件，发送tiff像元数据
         let imageCanvasSource = new ImageCanvas ( {
           canvasFunction: (extent, resolution, pixelRatio, size, projection) => {
             let map = this.map;
@@ -86,11 +103,13 @@
             let delta = [mapOrigin[0] - canvasOrigin[0], mapOrigin[1] - canvasOrigin[1]];
 
             //bbox
-            let [maxx, maxy, minx, miny] = [115.15625105321688, 25.05076432507324, 114.94282181742606, 24.86793945347697];
+            let [maxx, maxy, minx, miny] = [115.15617340390186, 25.050718570270526, 114.94274414875684, 24.867893600833835];
+
             let [extentLeft, extentBottom, extentRight, extentTop] = extent; //坐标投影
 
             let screenPointLeftTop = map.getPixelFromCoordinate ( [minx, maxy] );//换算图片屏幕左上角
             let screenPointRightBottom = map.getPixelFromCoordinate ( [maxx, miny] );//换算图片屏幕右下角
+            this.screenbbox = [screenPointLeftTop[0], screenPointLeftTop[1], screenPointRightBottom[0], screenPointRightBottom[1]];
             let width = Math.abs ( screenPointRightBottom[0] - screenPointLeftTop[0] );//实时计算图片的宽高
             let height = Math.abs ( screenPointLeftTop[1] - screenPointRightBottom[1] );
 
@@ -105,7 +124,7 @@
               width: data.width,//709
               domain: thresholdValue,
               colorScale: colorScale,
-              noDataValue: 0,
+              noDataValue: noDataValue,
               useWebGL: false
             } );
             plot.render ();
@@ -136,26 +155,79 @@
       },
       receiveColorScale: function (data) {
         this.colorScale = data
+      },
+      receiveNoDataValue: function (data) {
+        this.noDataValue = data;
+      },
+      clip: function () {
+        const that = this;
+        const map = this.map;
+        if (map.getLayers ().array_.length >= 3) {
+          map.removeLayer ( map.getLayers ().array_[2] )
+        }
+        let source = new VectorSource ( {
+          wrapX: false
+        } );
+        let vectorLayer = new VectorLayer ( {
+          source: source
+        } );
+        map.addLayer ( vectorLayer );
+        this.draw = new Draw ( {
+          source: source,
+          type: "Circle",
+          geometryFunction: createBox ()
+        } );
+        let draw = this.draw;
+        map.addInteraction ( draw );
+
+        draw.on ( 'drawend', function (geom) {
+
+          const coords = geom.feature.values_.geometry.flatCoordinates;
+          const extent = [map.getPixelFromCoordinate ( [coords[0], coords[1]] ), map.getPixelFromCoordinate ( [coords[4], coords[5]] )];
+          const [minx, maxy, maxx, miny] = [Math.min ( extent[0][0], extent[1][0] ), Math.max ( extent[0][1], extent[1][1] ), Math.max ( extent[0][0], extent[1][0] ), Math.min ( extent[0][1], extent[1][1] )];
+          const [left, top, right, bottom] = that.screenbbox;
+          const width = that.screenbbox[2] - that.screenbbox[0];
+          const height = that.screenbbox[3] - that.screenbbox[1];
+          const screenExtent = [parseInt ( (minx - left) * 709 / width ), parseInt ( (miny - top) * 665 / height ),
+            parseInt ( (width - (right - maxx)) * 709 / width ),
+            parseInt ( (height - (bottom - maxy)) * 665 / height )];
+          that.$root.vm.$emit ( "ondrawend", screenExtent );
+          map.removeInteraction ( draw );
+        } )
+      },
+      disActive: function () {
+        if (this.draw !== null) {
+          this.map.removeInteraction ( this.draw )
+        }
       }
     },
     watch: {
       yearValue: function (nVal, oVal) {
-
         if (nVal > 1995 && nVal < 2001) {
 
         } else {
-          this.addCanvasLayer ( nVal, this.thresholdValue, this.opacity, this.colorScale )
-          // this.$root.vm.$emit("senddata",this.tiffData)//触发事件，发送tiff像元数据
+          this.addCanvasLayer ( nVal, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue )
         }
       },
       thresholdValue: function (nVal, oVal) {
-        this.addCanvasLayer ( this.yearValue, nVal, this.opacity, this.colorScale )
+        this.addCanvasLayer ( this.yearValue, nVal, this.opacity, this.colorScale, this.noDataValue )
       },
       opacity: function (nVal, oVal) {
-        this.addCanvasLayer ( this.yearValue, this.thresholdValue, nVal, this.colorScale )
+        this.addCanvasLayer ( this.yearValue, this.thresholdValue, nVal, this.colorScale, this.noDataValue )
+      },
+      noDataValue: function (nVal, oVal) {
+        this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, nVal )
       },
       colorScale: function (nVal, oVal) {
-        this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, nVal )
+        this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, nVal, this.noDataValue )
+      },
+      isClipDisabled: function (nVal, oVal) {
+        const map=this.map;
+        if (nVal === true) {
+          if (map.getLayers ().array_.length >= 3) {
+            map.removeLayer ( map.getLayers ().array_[2] )
+          }
+        }
       }
     },
 

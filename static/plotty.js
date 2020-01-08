@@ -1507,7 +1507,7 @@ function () {
 
 
   _createClass(plot, [{
-    key: "getDatAndDrawChart",
+    key: "getDataAndDrawChart",
     value: function getData() {
       var dataset = this.currentDataset;
 

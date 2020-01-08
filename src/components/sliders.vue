@@ -68,7 +68,7 @@
         value: 2016,
         thresholdValue: [0,100],
         opacityValue:100,
-        noDataValue:[0.01,100],
+        noDataValue:[1,100],
         options:[
           {
             label:"选项1",
@@ -195,7 +195,8 @@
         this.$emit("onopacitychange",val/100)
       },
       onNoDataValueChange:function(val){
-        this.$emit("onnodatavaluechange",val/100)
+        let noDataValue=[val[0]/100,val[1]/100];
+        this.$emit("onnodatavaluechange",noDataValue)
       },
       onSelectChange:function(val){
         this.$emit("onselectchange",val)

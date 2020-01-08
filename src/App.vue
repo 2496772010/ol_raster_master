@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <el-container id="mainContainer" >
+    <el-container id="mainContainer">
       <el-header id="header"><h1>Remote Sensing 遥感云服务平台</h1></el-header>
       <el-container>
         <el-aside width="initial" style="position:relative;border: black 1px solid;height:597px">
@@ -32,7 +32,7 @@
               </template>
               <el-menu-item index="2-1">多源时序分析</el-menu-item>
               <el-menu-item index="2-2">间隔年份分析</el-menu-item>
-              <el-menu-item index="2-3" >全局分析</el-menu-item>
+              <el-menu-item index="2-3">全局分析</el-menu-item>
               <el-menu-item index="2-4">区域分析</el-menu-item>
             </el-submenu>
             <el-submenu index="3">
@@ -57,15 +57,28 @@
         </el-aside>
         <el-main style="padding: 0;margin: 0;">
           <canvas id="canvas" style="display: none"></canvas>
-          <ol_map style="position: relative;height: 597px" :is-show-pane="true">
+          <ol_map style="position: relative;height: 597px" :is-show-pane="true" :is-clip-disabled="isClipDisabled">
           </ol_map>
+
         </el-main>
-        <el-aside ref="elRightAside" width="initial" style="border: black 1px solid;height: 597px;" >
+        <el-aside  width="initial" style="border: black 1px solid;height: 597px;">
+
           <el-collapse-transition>
-            <golbal_analysis  v-show="elRightAsideShow"></golbal_analysis>
+            <mutitime_analysis v-show="ctrlNums[0]===1"></mutitime_analysis>
+          </el-collapse-transition>
+
+          <el-collapse-transition>
+            <interval_analysis  v-show="ctrlNums[1]===1"></interval_analysis>
+          </el-collapse-transition>
+
+          <el-collapse-transition>
+            <golbal_analysis v-show="ctrlNums[2]===1"></golbal_analysis>
+          </el-collapse-transition>
+
+          <el-collapse-transition>
+            <region_analysis  v-show="ctrlNums[3]===1"></region_analysis>
           </el-collapse-transition>
         </el-aside>
-
       </el-container>
     </el-container>
   </div>
@@ -79,10 +92,18 @@
   import slider from "@/components/sliders";
   import ElCollapseTransition from "element-ui/lib/transitions/collapse-transition";
   import Golbal_analysis from "@/components/function_panels/golbal_analysis";
+  import Region_analysis from "@/components/function_panels/region_analysis";
+  import mutitime_analysis from "@/components/function_panels/multitime_analysis";
+  import Interval_analysis from "@/components/function_panels/interval_analysis";
+  import Tool_bar from "@/components/toolbar";
 
   export default {
     name: 'App',
     components: {
+      Tool_bar,
+      Interval_analysis,
+      mutitime_analysis,
+      Region_analysis,
       Golbal_analysis,
       ElCollapseTransition,
       slider,
@@ -91,9 +112,13 @@
     },
     data() {
       return {
+        isClipDisabled:true,
         isCollapse: true,
-        elRightAsideShow:false
-
+        globalShow: false,
+        intervalShow: false,
+        multitimeShow: false,
+        regionShow: false,
+        ctrlNums: {0: 0, 1: 0, 2: 0, 3: 0},
       }
     },
     mounted() {
@@ -112,21 +137,31 @@
       },
       handleClose(key, keyPath) {
       },
-      handleSelect(key){
-        if (key==="2-3"){
-          if(this.elRightAsideShow===true){
-            this.elRightAsideShow=false
+      handleSelect(key) {//控制功能面板显示与隐藏
+        function isShow(value, index) {
+          value[index] = value[index] === 0 ? 1 : 0;
+          for (let x in value){
+            if (parseInt(x)!==index){
+              value[x]=0;
+            }
           }
-          else {
-            this.elRightAsideShow=true
-          }
-
         }
-      },
-      leftAsideControl() {
-        this.elRightAsideShow=false
-      }
 
+        if (key === "2-1") {
+          isShow(this.ctrlNums,0)
+        }
+        if (key === "2-2") {
+          isShow(this.ctrlNums,1)
+        }
+        if (key === "2-3") {
+            isShow(this.ctrlNums,2)
+        }
+        if (key === "2-4") {
+          isShow(this.ctrlNums,3)
+          this.isClipDisabled=!this.isClipDisabled
+        }
+
+      },
 
     },
 

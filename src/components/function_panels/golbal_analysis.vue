@@ -11,6 +11,7 @@
 </template>
 
 <script>
+  import getGeotiffData from "../../configjs/getGeotiffData.js"
   export default {
     name: "golbal_analysis",
     data() {
@@ -20,55 +21,15 @@
       }
     },
     mounted() {
-      this.getDatAndDrawChart ();
+      this.drawRegionChart();
       this.drawCharts ();
     },
-    beforeUpdate() {
-
-    },
     methods: {
-      getDatAndDrawChart: async function () {
-        let allData = [];
-        let yearValue = 0;
-        for (let i = 0; i < 17; i ++) {
-          if (i === 0) {
-            yearValue = 1995
-          } else {
-            yearValue = 2000 + i
-          }
-          let url = 'http://localhost:8081/geoserver/LingBeiNDVI/ows?' +
-            'service=WCS&version=2.0.1&request=GetCoverage&CoverageId=LingBeiNDVI:' +
-            yearValue +
-            '&bbox=90.42732202682015,0.0,143.57267797317974,84.00816352991252' +
-            '&width=485&height=768&srs=EPSG:4326&format=image/tiff';
-
-          const response = await fetch ( url );
-          const arrayBuffer = await response.arrayBuffer ();
-          const tiff = await GeoTIFF.fromArrayBuffer ( arrayBuffer );
-          const image = await tiff.getImage ();
-          const data = await image.readRasters ();
-          allData.push ( data[0] )
-        }
-        let allEcharts = this.$echarts.init ( document.getElementById ( 'allAnalysisChart' ) );
-        let allYaxis = [];
-
-        for (let i = 0; i < allData.length; i ++) {//循环计算y轴数据
-          allYaxis.push ( this.calculateChart ( allData[i] ) );
-        }
-        let traverseAllYaxis=[];
-        for(let i=0;i<allYaxis[0].length;i++){
-          traverseAllYaxis[i]=[];//为新数组开辟空间
-        }
-        for(let x=0;x<allYaxis.length;x++){
-          //遍历每一个具体的值
-          for(let j=0;j<allYaxis[x].length;j++){
-            traverseAllYaxis[j][x]=allYaxis[x][j];
-          }
-        }
-        console.log(traverseAllYaxis)
-        this.allTiffData = allData;
-        let allOptionSerierData=[]
-        let allOption = {
+      drawRegionChart:function(){
+        getGeotiffData.data().then((res)=>{
+        let traverseAllYaxis=res;
+        let globalChart=this.$echarts.init ( document.getElementById ( 'allAnalysisChart' ) );
+        let globalOption={
           title: {
             text: '汇总'
           },
@@ -78,6 +39,7 @@
           legend: {
             data: ["-1.00~0.00", "0.00~0.25", "0.25~0.50", "0.50~0.75", "0.75~1.00"]
           },
+          color:["#fb2200","#fba421","#fbf618","#49fb1d","#2A6F1C"],
           grid: {
             left: '3%',
             right: '4%',
@@ -130,31 +92,8 @@
             }
           ]
         };
-        allEcharts.setOption ( allOption )
-
-      },
-      calculateChart: function (array) {
-        let a = 0;
-        let b = 0;
-        let c = 0;
-        let d = 0;
-        let e = 0;
-        for (let i = 0; i < array.length; i ++) {
-          let value = array[i];
-          if (value < 0) {
-            a ++;
-          } else if (value > 0 && value <= 0.25) {
-            b ++;
-          } else if (value > 0.25 && value <= 0.5) {
-            c ++;
-          } else if (value > 0.5 && value <= 0.75) {
-            d ++;
-          } else if (value > 0.75 && value <= 1) {
-            e ++;
-          }
-        }
-        return [a, b, c, d, e]
-
+        globalChart.setOption(globalOption)
+        })
       },
       drawCharts: function () {
         let echarts = this.$echarts.init ( document.getElementById ( 'globalAnalysisChart' ) );
@@ -185,7 +124,7 @@
               x: 'left',
               data: ["-1.00~0.00", "0.00~0.25", "0.25~0.50", "0.50~0.75", "0.75~1.00"]
             },
-            color:["#fb2200","#fba421","#fbf618","#49fb1d","#0eb409"],
+            color:["#fb2200","#fba421","#fbf618","#49fb1d","#2A6F1C"],
             series: [
               {
                 name: 'NDVI 占比',
@@ -237,78 +176,6 @@
                   {value: d, name: '0.50~0.75'},
                   {value: e, name: '0.75~1.00'}
                 ]
-              }
-            ]
-          };
-          let option1 = {
-            backgroundColor: '#2c343c',
-
-            title: {
-              text: 'Customized Pie',
-              left: 'center',
-              top: 20,
-              textStyle: {
-                color: '#ccc'
-              }
-            },
-
-            tooltip : {
-              trigger: 'item',
-              formatter: "{a} <br/>{b} : {c} ({d}%)"
-            },
-
-            visualMap: {
-              show: false,
-              min: 80,
-              max: 600,
-              inRange: {
-                colorLightness: [0, 1]
-              }
-            },
-            series : [
-              {
-                name:'访问来源',
-                type:'pie',
-                radius : '55%',
-                center: ['50%', '50%'],
-                data:[
-                  {value: a, name: '-1.00~0.00'},
-                  {value: b, name: '0.00~0.25'},
-                  {value: c, name: '0.25~0.50'},
-                  {value: d, name: '0.50~0.75'},
-                  {value: e, name: '0.75~1.00'}
-                ].sort(function (a, b) { return a.value - b.value; }),
-                roseType: 'radius',
-                label: {
-                  normal: {
-                    textStyle: {
-                      color: 'rgba(255, 255, 255, 0.3)'
-                    }
-                  }
-                },
-                labelLine: {
-                  normal: {
-                    lineStyle: {
-                      color: 'rgba(255, 255, 255, 0.3)'
-                    },
-                    smooth: 0.2,
-                    length: 10,
-                    length2: 20
-                  }
-                },
-                itemStyle: {
-                  normal: {
-                    color: '#c23531',
-                    shadowBlur: 200,
-                    shadowColor: 'rgba(0, 0, 0, 0.5)'
-                  }
-                },
-
-                animationType: 'scale',
-                animationEasing: 'elasticOut',
-                animationDelay: function (idx) {
-                  return Math.random() * 200;
-                }
               }
             ]
           };

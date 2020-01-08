@@ -1,10 +1,12 @@
 <template>
-
+<div>
+  multitime_analysis
+</div>
 </template>
 
 <script>
     export default {
-        name: "mutitime_sequence_analysis"
+        name: "mutitime_analysis"
     }
 </script>
 
