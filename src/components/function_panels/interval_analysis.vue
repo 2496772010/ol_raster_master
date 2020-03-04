@@ -8,9 +8,11 @@
       <el-select @change="yearChange" v-model="defaultSelectValue" ref="first" style="width: 200px;">
         <el-option v-for="item in yearList" :value="item.value" :key="item.value" :label="item.value"></el-option>
       </el-select>
-      <el-select @change="yearChange" v-model="defaultSelectValue1" ref="second" style="width: 200px;">
+      <el-select @change="yearChange1" v-model="defaultSelectValue1" ref="second" style="width: 200px;">
         <el-option v-for="item in yearList" :value="item.value"></el-option>
-      </el-select>
+      </el-select><br>
+      <el-button type="primary">确定</el-button>
+      <el-button type="primary">清除</el-button>
     </div>
 
   </div>
@@ -91,11 +93,11 @@
       },
       yearChange() {
         let firstYearIndex = this.$refs.first.value !== 1995 ? this.$refs.first.value - 2000 : 0;
-        let secondYearIndex = this.$refs.second.value !== 1995 ? this.$refs.second.value - 2000 : 0;
         let firstYear = this.drawData ( document.getElementById ( "firstYear" ), this.res[firstYearIndex], 709, 665, [- 1, 1], "rainbow", [- 1, 1] );
-        let secondYear = this.drawData ( document.getElementById ( "secondYear" ), this.res[secondYearIndex], 709, 665, [- 1, 1], "rainbow", [- 1, 1] );
-
-
+      },
+      yearChange1() {
+        let secondYearIndex = this.$refs.second.value !== 1995 ? this.$refs.second.value - 2000 : 0;
+        let secondYear = this.drawData ( document.getElementById ( "secondYear" ), this.res[secondYearIndex], 709, 665, [- 1, 1], "rainbow", [- 1, 1] )
       }
     }
   }
