@@ -38,6 +38,7 @@
   import Tool_bar from "@/components/toolbar";
   import Echarts from "@/components/echarts";
   import ElCollapseTransition from "element-ui/lib/transitions/collapse-transition";
+  import eventBus from "@/configjs/eventBus";
 
   export default {
     name: "ol_map",
@@ -52,8 +53,15 @@
         colorScale: "greys",
         tiffData: null,
         draw: null,
-        screenbbox: null
+        screenbbox: null,
+        diff_array:[]
       }
+    },
+    created(){
+      let self=this;
+      this.$bus.on("sendiffdata",function (diffData) {
+        self.diff_array=diffData;
+      })
     },
     props: ["isClipDisabled"],
     mounted() {
@@ -77,9 +85,10 @@
       } );
       this.map.addLayer ( canvasLayer );
       this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue )//初始化图层
+
     },
     methods: {
-      addCanvasLayer: async function (yearValue, thresholdValue, opacity, colorScale, noDataValue) {
+      addCanvasLayer: async function (yearValue, thresholdValue, opacity, colorScale, noDataValue,data) {
         let url = 'http://localhost:8081/geoserver/LingBeiNDVI/ows?' +
           'service=WCS&version=2.0.1&request=GetCoverage&CoverageId=LingBeiNDVI:' +
           yearValue +
@@ -90,9 +99,16 @@
         const arrayBuffer = await response.arrayBuffer ();
         const tiff = await GeoTIFF.fromArrayBuffer ( arrayBuffer );
         const image = await tiff.getImage ();//绘制tif
-        const data = await image.readRasters ();
-        this.tiffData = data;
-        this.$root.vm.$emit ( "senddata", data, yearValue );//触发事件，发送tiff像元数据
+        const resData = await image.readRasters ();
+        this.tiffData = resData;
+        this.$root.vm.$emit ( "senddata", resData, yearValue );//触发事件，发送tiff像元数据
+        let tiffData=null;
+        if(data){
+          tiffData=data
+        }
+        else {
+          tiffData=resData[0]
+        }
         let imageCanvasSource = new ImageCanvas ( {
           canvasFunction: (extent, resolution, pixelRatio, size, projection) => {
             let map = this.map;
@@ -119,9 +135,9 @@
             //在画布上绘制
             let plot = new plotty.plot ( {
               canvas: document.getElementById ( 'canvas' ),
-              data: data[0],
-              height: data.height,//665
-              width: data.width,//709
+              data: tiffData,
+              height: resData.height,//665
+              width: resData.width,//709
               domain: thresholdValue,
               colorScale: colorScale,
               noDataValue: noDataValue,
@@ -199,6 +215,11 @@
         if (this.draw !== null) {
           this.map.removeInteraction ( this.draw )
         }
+      },
+      show_diff:function () {
+        this.$root.vm.$on("senddiffdata",function (diffdata) {
+
+        });
       }
     },
     watch: {
@@ -228,6 +249,10 @@
             map.removeLayer ( map.getLayers ().array_[2] )
           }
         }
+      },
+      diff_array:function (nVal, oVal) {
+        this.addCanvasLayer( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue ,nVal)
+        console.log("nval",nVal)
       }
     },
 
