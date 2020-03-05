@@ -11,7 +11,8 @@
       <el-select @change="yearChange1" v-model="defaultSelectValue1" placeholder="请选择第二个年份" ref="second" style="width: 200px;">
         <el-option v-for="item in yearList" :value="item.value"></el-option>
       </el-select><br>
-      <el-button type="primary" @click="cal_diff" style="float: left;width: 150px;">确定</el-button><el-button type="primary" style="float:right;width: 150px">清除</el-button>
+      <el-button type="primary" @click="cal_diff" style="float: left;width: 150px;">确定</el-button>
+      <el-button type="primary"@click="clear_data" style="float:right;width: 150px">清除</el-button>
     </div>
 
   </div>
@@ -115,6 +116,9 @@
         // this.$root.vm.$emit('senddiffdata',diffPixelArray)
         // eventBus.$emit("sendiffdata",diffPixelArray)
         this.$bus.emit("senddiffdata",diffPixelArray)
+      },
+      clear_data(){
+        this.$bus.emit("cleardiiffdata",[])
       },
       yearChange() {
         let firstYearIndex = this.$refs.first.value !== 1995 ? this.$refs.first.value - 2000 : 0;

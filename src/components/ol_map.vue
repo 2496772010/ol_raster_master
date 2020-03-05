@@ -59,8 +59,11 @@
     },
     created(){
       let self=this;
-      this.$bus.on("sendiffdata",function (diffData) {
+      this.$bus.on("senddiffdata",function (diffData) {
         self.diff_array=diffData;
+      })
+      this.$bus.on("cleardiiffdata",function (res) {
+        self.diff_array=res
       })
     },
     props: ["isClipDisabled"],
@@ -224,23 +227,43 @@
     },
     watch: {
       yearValue: function (nVal, oVal) {
+        if(this.diff_array.length===0){
         if (nVal > 1995 && nVal < 2001) {
 
         } else {
           this.addCanvasLayer ( nVal, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue )
+        }}
+        else {
+          this.addCanvasLayer( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue ,this.diff_array)
         }
       },
       thresholdValue: function (nVal, oVal) {
-        this.addCanvasLayer ( this.yearValue, nVal, this.opacity, this.colorScale, this.noDataValue )
+        if(this.diff_array.length===0){
+        this.addCanvasLayer ( this.yearValue, nVal, this.opacity, this.colorScale, this.noDataValue )}
+        else {
+          this.addCanvasLayer( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue ,this.diff_array)
+        }
       },
       opacity: function (nVal, oVal) {
-        this.addCanvasLayer ( this.yearValue, this.thresholdValue, nVal, this.colorScale, this.noDataValue )
+        if(this.diff_array.length===0){
+        this.addCanvasLayer ( this.yearValue, this.thresholdValue, nVal, this.colorScale, this.noDataValue )}
+        else {
+          this.addCanvasLayer( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue ,this.diff_array)
+        }
       },
       noDataValue: function (nVal, oVal) {
-        this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, nVal )
+        if(this.diff_array.length===0){
+        this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, nVal )}
+        else {
+          this.addCanvasLayer( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue ,this.diff_array)
+        }
       },
       colorScale: function (nVal, oVal) {
-        this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, nVal, this.noDataValue )
+        if(this.diff_array.length===0){
+        this.addCanvasLayer ( this.yearValue, this.thresholdValue, this.opacity, nVal, this.noDataValue )}
+        else {
+          this.addCanvasLayer( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue ,this.diff_array)
+        }
       },
       isClipDisabled: function (nVal, oVal) {
         const map=this.map;
@@ -252,7 +275,6 @@
       },
       diff_array:function (nVal, oVal) {
         this.addCanvasLayer( this.yearValue, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue ,nVal)
-        console.log("nval",nVal)
       }
     },
 
