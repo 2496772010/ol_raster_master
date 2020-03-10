@@ -12,7 +12,8 @@
         <el-option v-for="item in yearList" :value="item.value"></el-option>
       </el-select><br>
       <el-button type="primary" @click="cal_diff" style="float: left;width: 150px;">确定</el-button>
-      <el-button type="primary"@click="clear_data" style="float:right;width: 150px">清除</el-button>
+      <el-button type="primary"@click="clear_data" style="float:right;width: 150px">清除</el-button><br><br>
+      <div id="diffChart" :style="{width: '405px', height: '313px'}"></div>
     </div>
 
   </div>
@@ -22,7 +23,6 @@
 
   import getGeotiffData from "../../configjs/getGeotiffData.js"
   import Slider from "@/components/sliders";
-  import eventBus from "@/configjs/eventBus";
 
   export default {
     name: "interval_analysis",
@@ -49,41 +49,6 @@
 
     },
     methods: {
-      plotData() {
-
-        getGeotiffData.getData ().then ( (res) => {
-          function drawData(canvas, data, width, height, thresholdValue, colorScale, noDataValue) {
-            let plot = new plotty.plot ( {
-              canvas: canvas,
-              data: data,
-              height: height,//665
-              width: width,//709
-              domain: thresholdValue,
-              colorScale: colorScale,
-              noDataValue: noDataValue,
-              useWebGL: false
-            } );
-            plot.render ();
-            return data
-          }
-
-          let firstYearIndex = this.$refs.first.value = 1995 ? 0 : 1;
-          let secondYearIndex = this.$refs.second.value !== 1995 ? this.$refs.second.value - 2000 : 0;
-          let firstYear = drawData ( document.getElementById ( "firstYear" ), res[firstYearIndex], 709, 665, [- 1, 1], "rainbow", [- 1, 1] );
-          let secondYear = drawData ( document.getElementById ( "secondYear" ), res[secondYearIndex], 709, 665, [- 1, 1], "rainbow", [- 1, 1] );
-          let diffPixelArray = [];//差值
-          for (let i = 0; i < firstYear.length; i ++) {
-            let diffValue = secondYear[i] - firstYear[i];
-            if (diffValue === 0) {
-              diffPixelArray.push ( 0 )
-            } else {
-              diffPixelArray.push ( diffValue )
-            }
-          }
-          // console.log(diffPixelArray)
-        } );
-
-      },
       drawData(canvas, data, width, height, thresholdValue, colorScale, noDataValue) {
         let plot = new plotty.plot ( {
           canvas: canvas,
@@ -129,6 +94,9 @@
         let secondYearIndex = this.$refs.second.value !== 1995 ? this.$refs.second.value - 2000 : 0;
         let secondYear = this.drawData ( document.getElementById ( "secondYear" ), this.res[secondYearIndex], 709, 665, [- 1, 1], "rainbow", [- 1, 1] );
         this.secondArray=secondYear;
+      },
+      draw_chart(){
+        this.$echarts.init(document.getElementById("diffChart"));
       }
     }
   }

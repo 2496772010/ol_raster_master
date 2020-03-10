@@ -38,7 +38,7 @@
   import Tool_bar from "@/components/toolbar";
   import Echarts from "@/components/echarts";
   import ElCollapseTransition from "element-ui/lib/transitions/collapse-transition";
-  import eventBus from "@/configjs/eventBus";
+ 
 
   export default {
     name: "ol_map",
@@ -58,12 +58,14 @@
       }
     },
     created(){
+
       let self=this;
       this.$bus.on("senddiffdata",function (diffData) {
         self.diff_array=diffData;
-      })
+      });
       this.$bus.on("cleardiiffdata",function (res) {
-        self.diff_array=res
+        self.diff_array=res;
+        self.addCanvasLayer(this.yearValue, this.thresholdValue, this.opacity, this.colorScale, this.noDataValue)
       })
     },
     props: ["isClipDisabled"],
@@ -103,7 +105,7 @@
         const tiff = await GeoTIFF.fromArrayBuffer ( arrayBuffer );
         const image = await tiff.getImage ();//绘制tif
         const resData = await image.readRasters ();
-        this.tiffData = resData;
+        // this.tiffData = resData;
         this.$root.vm.$emit ( "senddata", resData, yearValue );//触发事件，发送tiff像元数据
         let tiffData=null;
         if(data){

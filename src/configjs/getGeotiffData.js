@@ -89,7 +89,6 @@ async function getData(extent){
     const arrayBuffer = await response.arrayBuffer ();
     const tiff = await GeoTIFF.fromArrayBuffer ( arrayBuffer );
     const image = await tiff.getImage ();
-    let window = [200, 0, 400, 100];
     const data = await image.readRasters ( {
       window:extent
     } );
@@ -99,6 +98,11 @@ async function getData(extent){
 }
 let getGeotiffData = {
   data: statisticData,
-  getData:getData
+  getData:getData,
+  transverseArray:transverseArray
 };
+getData().then(res=>{
+  postMessage(res)
+})
+
 export default getGeotiffData

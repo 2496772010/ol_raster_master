@@ -5,14 +5,15 @@ import App from './App'
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 import echarts from 'echarts'
-
+import VueWorker from "vue-worker"
+Vue.use(VueWorker)
 import vueBs from 'vue-bus'
-Vue.use(vueBs)
+Vue.use(vueBs);
 
-Vue.prototype.$echarts=echarts
+Vue.prototype.$echarts=echarts;
 Vue.use(ElementUI);
 
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 
 /* eslint-disable no-new */
 new Vue({
